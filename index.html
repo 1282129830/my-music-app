@@ -4,11 +4,51 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
-    <script type="module" crossorigin src="./assets/index-BkfFFlRH.js"></script>
+    <!-- 允许自动播放媒体 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- 禁止缩放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>音乐播放应用</title>
+    <script type="module" crossorigin src="./assets/index-Db1B5QR2.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-DBwVjrIu.css">
   </head>
   <body>
     <div id="root"></div>
+    <!-- 添加触发音频上下文的脚本 -->
+    <script>
+      // 用于在整个页面上触发用户交互事件以解锁音频
+      function unlockAudioContext() {
+        // 创建一个空的音频上下文
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 创建一个空白音频
+        const emptyBuffer = audioContext.createBuffer(1, 1, 22050);
+        const source = audioContext.createBufferSource();
+        source.buffer = emptyBuffer;
+        source.connect(audioContext.destination);
+        
+        // 尝试播放
+        if (source.start) {
+          source.start(0);
+        } else {
+          source.noteOn(0);
+        }
+        
+        // 移除事件监听器
+        document.removeEventListener('touchstart', unlockAudioContext);
+        document.removeEventListener('touchend', unlockAudioContext);
+        document.removeEventListener('click', unlockAudioContext);
+      }
+      
+      // 添加事件监听器
+      document.addEventListener('touchstart', unlockAudioContext, false);
+      document.addEventListener('touchend', unlockAudioContext, false);
+      document.addEventListener('click', unlockAudioContext, false);
+      
+      // 在微信环境中尝试激活音频
+      document.addEventListener('WeixinJSBridgeReady', function() {
+        unlockAudioContext();
+      }, false);
+    </script>
   </body>
 </html>
