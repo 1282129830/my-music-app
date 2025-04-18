@@ -58,14 +58,22 @@ function WeChatAutoPlayMusicWithControls() {
     const handleBridgeReady = () => {
         console.log('WeixinJSBridgeReady 事件触发！');
         setStatusMessage('WeixinJSBridge 已就绪，尝试自动播放...');
-        // 确保音频已加载或至少可以开始播放
-        if (audioElement && (audioElement.readyState >= 2 || canPlayThrough)) { // readyState 2 (HAVE_CURRENT_DATA) 或更高
-             playMusic();
-        } else {
-            console.log('音频尚未加载足够数据，等待 canplaythrough 事件');
-            setStatusMessage('音频加载中，稍后自动播放...');
-            // 如果 BridgeReady 时音频还没好，依赖 canplaythrough 事件来触发
-        }
+        
+        // 通过invoke方法触发播放（更符合教程中的推荐做法）
+        window.WeixinJSBridge.invoke('getNetworkType', {}, function() {
+          if (audioElement) {
+            audioElement.play()
+              .then(() => {
+                console.log('通过WeixinJSBridge成功播放音乐');
+                setIsPlaying(true);
+                setStatusMessage('音乐正在播放(WeixinJSBridge)');
+              })
+              .catch(err => {
+                console.error('即使通过WeixinJSBridge也播放失败:', err);
+                setStatusMessage('播放失败，请手动播放');
+              });
+          }
+        });
     };
 
     // --- 音频事件监听 ---
@@ -77,7 +85,10 @@ function WeChatAutoPlayMusicWithControls() {
         // (注意：这可能与 handleBridgeReady 竞争，但 playMusic 内部有防止重复播放的逻辑)
         if (typeof WeixinJSBridge !== 'undefined' && !isPlaying) {
              console.log('音频加载完成，且 Bridge 已就绪，尝试播放');
-             playMusic();
+             // 使用invoke方法尝试播放
+             window.WeixinJSBridge.invoke('getNetworkType', {}, function() {
+               playMusic();
+             });
         }
     };
 
@@ -172,11 +183,12 @@ function WeChatAutoPlayMusicWithControls() {
 
   return (
     <div>
-      <h2>微信内自动播放音乐 Demo</h2>
+      <h2>Audio元素实现 (iOS微信可自动播放)</h2>
       <audio
         ref={audioRef}
         src={MUSIC_URL}
         preload="auto" // 预加载音频
+        loop // 循环播放
         // controls // 可以添加浏览器原生控件用于调试，最终可隐藏
         style={{ display: 'none' }} // 通常背景音乐播放器是隐藏的
       >
@@ -188,7 +200,7 @@ function WeChatAutoPlayMusicWithControls() {
       <button onClick={togglePlay} disabled={!canPlayThrough}>
         {isPlaying ? '暂停' : '播放'}
       </button>
-      {/* 可以添加更多控件，如音量、进度条等 */}
+      <p><small>注意: 在Android微信中可能无法自动播放，建议使用Web Audio方案</small></p>
     </div>
   );
 }
